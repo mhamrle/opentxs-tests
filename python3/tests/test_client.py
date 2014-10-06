@@ -15,3 +15,8 @@ def test_list_servers():
     servers = pyopentxs.get_servers()
     assert servers != []
     assert servers[0][1] == "Transactions.com"  # from localhost.xml server contract
+
+def test_nym_stats():
+    nym_id = pyopentxs.create_nym(1024, "", "")
+    stats = pyopentxs.get_nym_stats(nym_id)
+    assert stats.find(nym_id) >= 0

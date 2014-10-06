@@ -151,6 +151,17 @@ def get_nym_ids():
 
     return nym_ids
 
+def get_nym_stats(nym_id):
+    """
+    Return string with stats for given nym id.
+    """
+    assert len(nym_id) > 0
+    retval = opentxs.OTAPI_Wrap_GetNym_Stats(nym_id)
+
+    if retval == '':
+        raise ReturnValueError(retval)
+
+    return retval
 
 def get_nym_name(nym_id):
     """

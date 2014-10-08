@@ -115,7 +115,41 @@ class TestWriteCheque(unittest.TestCase):
     def test_negative_transfer(self):
         self.transfer(-10, valid=False)
         self.check_balance(-100, 100, 0)
+
+    def test_maximal_amount(self):
+        self.check_balance(-100, 100, 0)
+        maxint = 2**63 - 1
+        self.transfer(maxint - 100, source=self.issuer, target=self.target)
+        self.check_balance(-maxint, 100, maxint - 100)
+
+        self.transfer(1, source=self.issuer, target=self.target)
+        self.check_balance(-maxint - 1, 100, maxint - 100 + 1)
         
+        #TODO integer overflow
+        self.transfer(1, source=self.issuer, target=self.target)
+        self.check_balance(-maxint - 2, 100, maxint - 100 + 2)
+        
+    def test_maximal_amount2(self):
+        self.check_balance(-100, 100, 0)
+        maxint = 2**63 - 1
+        self.transfer(maxint - 100, source=self.issuer, target=self.target)
+        self.check_balance(-maxint, 100, maxint - 100)
+
+        self.transfer(maxint, source=self.issuer, target=self.target, valid=False)
+        self.check_balance(-maxint, 100, maxint - 100)
+
+    def test_maximal_amount3(self):
+        self.check_balance(-100, 100, 0)
+        maxint = 2**63 - 1
+        self.transfer(maxint - 100, source=self.issuer, target=self.target)
+        self.check_balance(-maxint, 100, maxint - 100)
+
+        self.transfer(1, source=self.issuer, target=self.target)
+        self.check_balance(-maxint - 1, 100, maxint - 100 + 1)
+
+        #TODO integer overflow
+        self.transfer(50, source=self.issuer, target=self.target)
+        self.check_balance(-maxint - 1 - 50, 100, maxint - 100 + 1 + 50)
 
 def test_create_account():
     server_id = pyopentxs.first_server_id()

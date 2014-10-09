@@ -316,6 +316,28 @@ def issue_asset_type(server_id, nym_id, contract_stream):
 
 
 
+class Voucher(object):
+    def __init__(self, server_id, amount, sender_account_id,
+                 sender_nym_id, memo, recipient_nym_id):
+        self.server_id = server_id
+        self.amount = amount
+        self.sender_account_id = sender_account_id
+        self.sender_nym_id = sender_nym_id
+        self.memo = memo
+        self.recipient_nym_id = recipient_nym_id
+        self._body = None
+
+    def generate(self):
+        """
+        Generate voucher
+        """
+        self._body = withdraw_voucher(self.server_id, self.sender_nym_id, self.sender_account_id, self.recipient_nym_id, self.memo, self.amount)
+        return self._body
+
+    def deposit(self, depositor_nym_id, depositor_account_id):
+        '''Deposit the cheque, getting a written copy from the server first if we don't have one.'''
+        deposit = _otme.deposit_cheque(self.server_id, depositor_nym_id, depositor_account_id, self._body)
+        return deposit
 
 class Cheque(object):
     def __init__(self, server_id, cheque_amount, valid_from, valid_to, sender_acct_id,
@@ -366,6 +388,15 @@ def get_account_balance(server_id, nym_id, account_id):
     if res < 0:
         raise ReturnValueError(res)
     return opentxs.OTAPI_Wrap_GetAccountWallet_Balance(account_id)
+
+def withdraw_voucher(server_id, nym_id, acct_from, target_nym_id, note, amount):
+    message = _otme.withdraw_voucher(server_id, nym_id, acct_from, target_nym_id, note, amount)
+    assert is_message_success(message)
+    ledger = opentxs.OTAPI_Wrap_Message_GetLedger(message)
+    transaction = opentxs.OTAPI_Wrap_Ledger_GetTransactionByIndex(server_id, nym_id, acct_from, ledger, 0)
+    output = opentxs.OTAPI_Wrap_Transaction_GetVoucher(server_id, nym_id, acct_from, transaction)
+    return output
+    
 
 # cleanup methods
 

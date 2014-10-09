@@ -395,6 +395,8 @@ def withdraw_voucher(server_id, nym_id, acct_from, target_nym_id, note, amount):
     ledger = opentxs.OTAPI_Wrap_Message_GetLedger(message)
     transaction = opentxs.OTAPI_Wrap_Ledger_GetTransactionByIndex(server_id, nym_id, acct_from, ledger, 0)
     output = opentxs.OTAPI_Wrap_Transaction_GetVoucher(server_id, nym_id, acct_from, transaction)
+    if output == '':
+        raise ReturnValueError(output)
     return output
     
 

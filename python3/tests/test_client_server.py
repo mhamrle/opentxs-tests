@@ -56,7 +56,13 @@ def transfer_voucher(self, amount, source=None, target=None, valid_from = -1, va
 
     voucher = pyopentxs.Voucher(self.server_id, amount, source.account_id, source.nym_id, "memo", target.nym_id)
 
-    voucher.generate()
+    if valid:
+        voucher.generate()
+    else:
+        with pytest.raises(pyopentxs.ReturnValueError):
+            voucher.generate()
+        return
+
     deposit = voucher.deposit(target.nym_id, target.account_id)
     if valid:
         assert pyopentxs.is_message_success(deposit)
@@ -105,8 +111,7 @@ class TestGenericTransfer:
     # TODO: this crash
     #    (0, True),
         (10, True),
-    # TODO: voucher does not fail here
-    #    (200, False),
+        (200, False),
     ])
     def test_simple_transfer(self, prepared_accounts, transfer_generic, amount, should_pass):
         transfer_generic(prepared_accounts, amount, valid = should_pass)

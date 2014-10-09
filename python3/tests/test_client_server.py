@@ -69,9 +69,25 @@ def transfer_voucher(self, amount, source=None, target=None, valid_from = -1, va
     else:
         with pytest.raises(pyopentxs.ReturnValueError):
             pyopentxs.is_message_success(deposit)
-    
+   
+def transfer_transfer(self, amount, source=None, target=None, valid=True):
+    if not source:
+        source = self.source
+    if not target:
+        target = self.target
 
-@pytest.fixture(params=(transfer_cheque, transfer_voucher), ids=("transfer_cheque", "transfer_voucher"))
+    if valid:
+        pyopentxs.send_transfer(self.server_id, self.source.nym_id, self.source.account_id, self.target.account_id, "withdraw", amount)
+    else:
+        with pytest.raises(pyopentxs.ReturnValueError):
+            pyopentxs.send_transfer(self.server_id, self.source.nym_id, self.source.account_id, self.target.account_id, "withdraw", amount)
+        return
+
+    #accept all inbox items in target account
+    assert pyopentxs._otme.accept_inbox_items(self.target.account_id, 0, "")
+
+#@pytest.fixture(params=(transfer_cheque, transfer_voucher, transfer_transfer))
+@pytest.fixture(params=(transfer_transfer, transfer_cheque, transfer_voucher), ids=("transfer_transfer", "transfer_cheque", "transfer_voucher"))
 def transfer_generic(request):
     return request.param
 

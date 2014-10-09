@@ -389,6 +389,11 @@ def get_account_balance(server_id, nym_id, account_id):
         raise ReturnValueError(res)
     return opentxs.OTAPI_Wrap_GetAccountWallet_Balance(account_id)
 
+def send_transfer(server_id, nym_id, acct_from, acct_to, note, amount):
+    message = _otme.send_transfer(server_id, nym_id, acct_from, acct_to, amount, note)
+    assert is_message_success(message)
+    return message
+    
 def withdraw_voucher(server_id, nym_id, acct_from, target_nym_id, note, amount):
     message = _otme.withdraw_voucher(server_id, nym_id, acct_from, target_nym_id, note, amount)
     assert is_message_success(message)

@@ -1,11 +1,14 @@
 import pytest
 from pyopentxs import (server, ReturnValueError, is_message_success, error, instrument)
+from pyopentxs import otme
 from pyopentxs.nym import Nym
 from pyopentxs.asset import Asset
 from pyopentxs.account import Account
 from datetime import datetime, timedelta
 from pyopentxs.instrument import transfer, write
+import pyopentxs.instrument
 from pyopentxs.tests import data
+import opentxs
 
 # def test_check_server_id():
 #     nym_id = pyopentxs.create_nym()
@@ -302,3 +305,57 @@ def test_issuer_bidirectional(prepared_accounts, amount):
     second_transfer = new_cheque(prepared_accounts.issuer, prepared_accounts.source, -amount)
     transfer(second_transfer, prepared_accounts.issuer, prepared_accounts.source)
     prepared_accounts.assert_balances(-100, 100, 0)
+
+def test_reject_transfer(prepared_accounts):
+    prepared_accounts.assert_balances(-100, 100, 0)
+
+
+    server_id = server.first_active_id()
+#    message = instrument.send_transfer(server_id, prepared_accounts.source, prepared_accounts.target, "", 15)
+#    assert is_message_success(message)
+
+    print("trasnfer: {} {} {} {} {} {}".format(server_id, prepared_accounts.source.nym._id, prepared_accounts.source._id,
+                                 prepared_accounts.target._id, 10, "transfer"))
+    message = otme.send_transfer(server_id, prepared_accounts.source.nym._id, prepared_accounts.source._id,
+                                 prepared_accounts.target._id, 10, "transfer")
+    assert is_message_success(message)
+    prepared_accounts.assert_balances(-100, 90, 0)
+
+    nym_id = prepared_accounts.target.nym._id
+    acct_id = prepared_accounts.target._id
+
+    otme.make_sure_enough_trans_nums(20, server_id, nym_id)
+
+#    assert otme.accept_inbox_items(acct_id, 0, "")
+#    assert False
+
+    otme.retrieve_account(server_id, nym_id, acct_id, True)
+    inbox = opentxs.OTAPI_Wrap_LoadInbox(server_id, nym_id, acct_id)
+    print("inbox:", inbox)
+    assert inbox
+    items = opentxs.OTAPI_Wrap_Ledger_GetCount(server_id, nym_id, acct_id, inbox) 
+    print("items:", items)
+    ledger = opentxs.OTAPI_Wrap_Ledger_CreateResponse(server_id, nym_id, acct_id, inbox)
+    print("ledger:", ledger)
+    print("inbox:", inbox)
+    assert ledger
+    for i in range(items):
+        print("i: ", i)
+        tx = opentxs.OTAPI_Wrap_Ledger_GetTransactionByIndex(server_id, nym_id, acct_id, inbox, i)
+        print("tx: ", tx)
+        assert tx
+        ledger = opentxs.OTAPI_Wrap_Transaction_CreateResponse(server_id, nym_id, acct_id, ledger, tx, False)
+        print("ledger:", ledger)
+        assert ledger
+
+    response = opentxs.OTAPI_Wrap_Ledger_FinalizeResponse(server_id, nym_id, acct_id, ledger)
+    response = otme.process_inbox(server_id, nym_id, acct_id, response)
+#    reply = otme.responseReply(response, server_id, nym_id, acct_id, "process_inbox")    
+#    assert reply == 1
+    print("ledger: ", ledger)
+    print("response: ", response)
+
+    #TODO this is not correct
+    prepared_accounts.assert_balances(-100, 90, 0)
+#    assert False
+

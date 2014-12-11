@@ -20,6 +20,10 @@ class Account:
             to create an account of the same type, create a new Account object first.")
         account_xml = otme.create_asset_acct(self.server_id, self.nym._id, self.asset._id)
         s = BeautifulSoup(account_xml)
+        if s.registeraccountresponse:
+            self._id = s.registeraccountresponse['accountid']
+            return self
+
         if s.createaccountresponse:
             self._id = s.createaccountresponse['accountid']
             return self

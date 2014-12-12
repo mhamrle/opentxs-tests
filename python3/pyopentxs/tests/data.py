@@ -72,3 +72,16 @@ class MarketAccounts:
         transfer(balance, self.asset2.issuer_account, self.bob.account2)
         transfer(balance, self.asset2.issuer_account, self.charlie.account2)
         return self
+
+    def assert_balances(self, issuer, alice, bob, charlie, issuer2, alice2, bob2, charlie2):
+        assert (issuer, alice, bob, charlie, issuer2, alice2, bob2, charlie2) == (
+                                            self.asset1.issuer_account.balance(),
+                                            self.alice.account1.balance(),
+                                            self.bob.account1.balance(),
+                                            self.charlie.account1.balance(),
+                                            self.asset2.issuer_account.balance(),
+                                            self.alice.account2.balance(),
+                                            self.bob.account2.balance(),
+                                            self.charlie.account2.balance(),
+                                            )
+#            "balances do not match."

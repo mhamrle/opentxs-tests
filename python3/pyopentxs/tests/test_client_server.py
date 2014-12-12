@@ -1,4 +1,6 @@
 import pytest
+import opentxs
+import time
 from pyopentxs import (server, ReturnValueError, is_message_success, error, instrument)
 from pyopentxs.nym import Nym
 from pyopentxs.asset import Asset
@@ -6,6 +8,7 @@ from pyopentxs.account import Account
 from datetime import datetime, timedelta
 from pyopentxs.instrument import transfer, write
 from pyopentxs.tests import data
+import pyopentxs
 
 # def test_check_server_id():
 #     nym_id = pyopentxs.create_nym()
@@ -302,3 +305,70 @@ def test_issuer_bidirectional(prepared_accounts, amount):
     second_transfer = new_cheque(prepared_accounts.issuer, prepared_accounts.source, -amount)
     transfer(second_transfer, prepared_accounts.issuer, prepared_accounts.source)
     prepared_accounts.assert_balances(-100, 100, 0)
+
+def test_market():
+    marketaccounts = data.MarketAccounts().initial_balance()
+
+    marketaccounts.assert_balances(-300, 100, 100, 100, -300, 100, 100, 100)
+    
+    alice = marketaccounts.alice
+    pyopentxs.otme.create_market_offer(alice.account1._id, alice.account2._id, 1, 1, 10, 27, True, 10000, "", 0)
+
+    bob = marketaccounts.bob
+    pyopentxs.otme.create_market_offer(bob.account1._id, bob.account2._id, 1, 1, 10, 27, False, 10000, "", 0)
+
+    # waiting for cron
+    time.sleep(60)
+
+    marketaccounts.assert_balances(-300, 97, 103, 100, -300, 181, 19, 100)
+
+    message = pyopentxs.otme.get_market_list(server.first_active_id(), alice.account1.nym._id)
+    assert is_message_success(message)
+
+    message = pyopentxs.otme.get_market_list(server.first_active_id(), bob.account1.nym._id)
+    assert is_message_success(message)
+
+    server_id = server.first_active_id()
+
+    obj = opentxs.QueryObject(opentxs.STORED_OBJ_MARKET_LIST, "markets", server_id, "market_data.bin")
+    marketList = opentxs.MarketList_ot_dynamic_cast(obj)
+    market_id = marketList.GetMarketData(0).market_id
+    marketList.GetMarketData(0).total_assets  # this is 0
+    marketList.GetMarketData(0).current_bid  # this is 0
+    marketList.GetMarketData(0).volume_trades  # this is 0
+    marketList.GetMarketData(0).last_sale_price  # this is 1 ??
+
+    c = marketList.GetMarketData(0)
+    print("YYYYYYYY:",
+    "notary_id", c.notary_id,
+    "market_id", c.market_id,
+    "instrument_definition_id", c.instrument_definition_id,
+    "currency_type_id", c.currency_type_id,
+    "scale", c.scale,
+    "total_assets", c.total_assets,
+    "number_bids", c.number_bids,
+    "number_asks", c.number_asks,
+    "last_sale_price", c.last_sale_price,
+    "current_bid", c.current_bid,
+    "current_ask", c.current_ask,
+    "volume_trades", c.volume_trades,
+    "volume_assets", c.volume_assets,
+    "volume_currency", c.volume_currency,
+    "recent_highest_bid", c.recent_highest_bid,
+    "recent_lowest_ask", c.recent_lowest_ask,
+    "last_sale_date", c.last_sale_date,
+    )
+
+
+#    message = pyopentxs.otme.get_market_offers(server_id, alice.account1.nym._id, market_id, 20)
+#    assert is_message_success(message)
+#    obj = opentxs.QueryObject(opentxs.STORED_OBJ_TRADE_LIST_MARKET, "markets", server_id, market_id + ".bin")
+#    tradeList = opentxs.TradeListMarket_ot_dynamic_cast(obj);
+#
+#    c = tradeList.GetTradeDataMarket(0)
+#    print("ZZZZZ:",
+#    "price", c.price,
+#    )
+        
+
+

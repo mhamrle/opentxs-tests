@@ -30,6 +30,8 @@ def create_fresh_ot_config():
 def restart_opentxs_notary():
     '''opentxs-notary must be on the PATH'''
 
+    notary.kill_notary()
+
     create_fresh_ot_config()
 
     # start new

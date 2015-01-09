@@ -83,15 +83,17 @@ def setup(contract_stream, total_servers=1):
 
     return output
 
+def kill_notary():
+    for proc in psutil.process_iter():
+        if proc.name() == "opentxs-notary":
+            proc.kill()
+            psutil.wait_procs([proc], timeout=10)
 
 def restart():
     pyopentxs.cleanup()
 
     # kill existing processes
-    for proc in psutil.process_iter():
-        if proc.name() == "opentxs-notary":
-            proc.kill()
-            psutil.wait_procs([proc], timeout=10)
+    kill_notary()
 
     # start
     pyopentxs.init()

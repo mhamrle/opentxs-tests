@@ -3,6 +3,7 @@ from pyopentxs.asset import Asset
 from pyopentxs import account, error, ReturnValueError, server
 from pyopentxs.tests import data
 import pytest
+import opentxs
 
 
 @pytest.fixture(scope='function')
@@ -53,6 +54,55 @@ def test_create_account_nonexistent_asset():
     with error.expected(ReturnValueError):
         acct.create()
 
+@pytest.mark.parametrize("parse_string,value,formatted,formatted_symbol", [
+    ["12,345", 12345000, "12,345.000", "BTC 12,345.000"],
+    ["1", 1000, "1.000", "BTC 1.000"],
+    ["0", 0, "0.000", "BTC 0.000"],
+    ["-0", 0, "0.000", "BTC 0.000"],
+    ["0.001", 1, "0.001", "BTC 0.001"],
+    ["-0.001", -1, "-0.001", "-BTC 0.001"],
+    ["-12,345", -12345000, "-12,345.000", "-BTC 12,345.000"],
+    # 2**62
+    ["4611686018427387.904", 4611686018427387904, "4,611,686,018,427,387.904", "BTC 4,611,686,018,427,387.904"],
+    # -2**62
+    ["-4611686018427387.904", -4611686018427387904, "-4,611,686,018,427,387.904", "-BTC 4,611,686,018,427,387.904"],
+    ])
+def test_amount_format_btc(parse_string, value, formatted, formatted_symbol):
+    nym = Nym().register()
+    asset = Asset().issue(nym, open(data.btc_contract_file))
+    assert value == opentxs.OTAPI_Wrap_StringToAmount(asset._id, parse_string)
+    assert value == opentxs.OTAPI_Wrap_StringToAmount(asset._id, formatted)
+    assert formatted == opentxs.OTAPI_Wrap_FormatAmountWithoutSymbol(asset._id, value)
+    assert formatted_symbol == opentxs.OTAPI_Wrap_FormatAmount(asset._id, value)
+
+@pytest.mark.parametrize("parse_string,value,formatted,formatted_symbol", [
+    ["12,345", 12345, "12,345", "sg 12,345"],
+    ["1", 1, "1", "sg 1"],
+    ["0", 0, "0", "sg 0"],
+    ["-0", 0, "0", "sg 0"],
+    ["-1", -1, "-1", "-sg 1"],
+    ["-12,345", -12345, "-12,345", "-sg 12,345"],
+    # TODO is it correct?
+    ["--1000", -1000, "-1,000", "-sg 1,000"],
+    # 2**62
+    ["4611686018427387904", 4611686018427387904, "4,611,686,018,427,387,904", "sg 4,611,686,018,427,387,904"],
+    # -2**62
+    ["-4611686018427387904", -4611686018427387904, "-4,611,686,018,427,387,904", "-sg 4,611,686,018,427,387,904"],
+    ])
+def test_amount_format_silver(parse_string, value, formatted, formatted_symbol):
+    nym = Nym().register()
+    asset = Asset().issue(nym, open(data.silver_contract_file))
+    assert value == opentxs.OTAPI_Wrap_StringToAmount(asset._id, parse_string)
+    assert value == opentxs.OTAPI_Wrap_StringToAmount(asset._id, formatted)
+    assert formatted == opentxs.OTAPI_Wrap_FormatAmountWithoutSymbol(asset._id, value)
+    assert formatted_symbol == opentxs.OTAPI_Wrap_FormatAmount(asset._id, value)
+
+
+def test_amount_format_error():
+    nym = Nym().register()
+    asset = Asset().issue(nym, open(data.silver_contract_file))
+    assert 0 == opentxs.OTAPI_Wrap_StringToAmount(asset._id, "XXXX")
+    assert 0 == opentxs.OTAPI_Wrap_StringToAmount(asset._id, "")
 
 @pytest.mark.skipif(True, reason="https://github.com/Open-Transactions/opentxs/issues/364")
 def test_delete_account(an_account):

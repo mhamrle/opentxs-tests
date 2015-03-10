@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 import io
 import os
 import shutil
-import psutil
 import configparser
+import subprocess
 
 
 def make_server_contract(contract, server_nym):
@@ -85,20 +85,38 @@ def setup(contract_stream, total_servers=1):
 
 
 def restart():
-    # pyopentxs.cleanup()
-    print("cleaned up")
-    # kill existing processes
-    for proc in psutil.process_iter():
-        if proc.name() == "opentxs-notary":
-            proc.kill()
-            psutil.wait_procs([proc], timeout=10)
-    print("killed old notaries")
-    # start new
-    os.system("opentxs-notary > opentxs-notary.log 2>&1 &")
-    print("Started notary process")
+    process_name = "opentxs-notary"
+    pyopentxs.killall(process_name)
 
-    # start
+    # danger, also kill any goataries,
+    # since they occupy the same port
+    pyopentxs.killall("notary")
+
+    os.system("%s > %s 2>&1 &" % (process_name, "opentxs-notary.log"))
+    print("Started %s process" % process_name)
     pyopentxs.init()
+
+
+def create_fresh_ot_config():
+    pyopentxs.create_fresh_wallet()
+    # create server contract and empty the client side data
+    setup_data = setup(open('../test-data/sample-contracts/localhost.xml'), total_servers=2)
+    p = subprocess.Popen(["opentxs-notary", "--only-init"], stdin=subprocess.PIPE)
+    outs, errs = p.communicate(input=setup_data.getvalue(), timeout=20)
+
+    # set cron interval to shorter than default
+    config_data = config.read()
+    config_data['cron']['ms_between_cron_beats'] = '2500'  # in milliseconds
+    config.write()
+
+
+def fresh_setup():
+    '''opentxs-notary must be on the PATH'''
+
+    create_fresh_ot_config()
+    print("created fresh config, restarting...")
+    restart()
+    print("restarted.")
 
 
 class Config:

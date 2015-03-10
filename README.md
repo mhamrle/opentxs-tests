@@ -8,7 +8,10 @@
 
 ## Building opentxs with python bindings
 
-See the [build instructions](https://github.com/monetas/opentxs), but use the following extra options for cmake. Change the paths below to match your system if necessary.
+See the
+[build instructions](https://github.com/Open-Transactions/opentxs),
+but use the following extra options for cmake. Change the paths below
+to match your system if necessary.
 
 ```shell
 cmake .. \
@@ -34,7 +37,11 @@ virtualenv -p `which python3` ~/.virtualenvs/opentxs
 ```
 
 
-Then edit `~/.virtualenvs/opentxs/bin/activate` and add the following environment variables at the bottom (so that you don't have to keep setting them each time you use a new shell). Edit the paths to reflect where you installed opentxs libraries, and where you cloned this repository.
+Then edit `~/.virtualenvs/opentxs/bin/activate` and add the following
+environment variables at the bottom (so that you don't have to keep
+setting them each time you use a new shell). Edit the paths to reflect
+where you installed opentxs libraries, and where you cloned this
+repository.
 
 ```shell
 export PYTHONPATH=/usr/local/lib64/python3.3/site-packages/:~/workspace/opentxs-tests/python3
@@ -54,16 +61,28 @@ pip install -Ur requirements.txt
 
 ## Running the tests
 
-**Note:** these tests will destroy any running `opentxs-notary` processes and all the data in `~/.ot`. If you need any of your existing data, back it up first.
+**Note:** these tests will destroy any running `opentxs-notary` or
+  `notary` processes, and all the data in `~/.ot`. If you need any of
+  your existing data, back it up first.
 
 ```shell
 cd ~/workspace/opentxs-tests/python3
 ./runtests.py
 ```
 
+## Running against the new (Golang) notary
+
+```shell
+cd ~/workspace/opentxs-tests/python3
+# selects the new notary version and only tests that currently work with it
+./runtests.py --notary-version 1 -m goatary
+```
+
 ## Logs
 
-The `opentxs-notary` stdout will be redirected to `opentxs-notary.log`.
+The `opentxs-notary` stdout will be redirected to
+`opentxs-notary.log`. `notary` stdout will go to
+`opentxs-goatary.log`.
 
 
 

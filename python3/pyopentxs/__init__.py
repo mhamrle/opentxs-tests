@@ -2,7 +2,9 @@ import opentxs
 from contextlib import closing
 import os
 import sys
-
+import psutil
+import shutil
+import pyopentxs
 
 # OTME = OpenTransactions MadeEasy
 otme = opentxs.OT_ME()
@@ -88,3 +90,20 @@ def init():
 
 def cleanup():
     opentxs.OTAPI_Wrap_AppCleanup()
+
+
+def killall(process_name):
+    for proc in psutil.process_iter():
+        if proc.name() == process_name:
+            proc.kill()
+            psutil.wait_procs([proc], timeout=10)
+    print("killed all %s" % process_name)
+
+
+def create_fresh_wallet():
+    # this creates fresh data in OT client data dir
+    if os.path.exists(pyopentxs.config_dir):
+        shutil.rmtree(pyopentxs.config_dir)
+
+    # create a client wallet just for making the server contract
+    os.system("opentxs --dummy-passphrase changepw")

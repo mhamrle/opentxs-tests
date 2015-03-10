@@ -6,8 +6,16 @@ import opentxs
 from pyopentxs import market
 from pyopentxs import notary
 
-notary.config.read()
-cron_interval = int(int(notary.config.parser['cron']['ms_between_cron_beats']) / 1000 * 1.5)
+cron_interval = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def speed_up_cron(pytestconfig):
+    if pytestconfig.getoption("--notary-version") == 0:
+        # if old notary, speed up the cron job that picks up new market orders
+        notary.config.read()
+        global cron_interval
+        cron_interval = int(int(notary.config.parser['cron']['ms_between_cron_beats']) / 1000 * 1.5)
 
 
 @pytest.fixture

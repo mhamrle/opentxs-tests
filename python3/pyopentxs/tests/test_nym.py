@@ -5,6 +5,7 @@ import pytest
 import opentxs
 
 
+@pytest.mark.goatary
 def test_register_nym():
     Nym().register()
 

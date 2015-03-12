@@ -14,6 +14,7 @@ from pyopentxs import cash
 
 
 @pytest.mark.parametrize("issue_for_other_nym,expect_success", [[True, False], [False, True]])
+@pytest.mark.goatary
 def test_issue_asset_contract(issue_for_other_nym, expect_success):
     server_id = server.first_active_id()
     nym = Nym().register(server_id)

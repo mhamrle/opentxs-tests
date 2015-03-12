@@ -113,7 +113,7 @@ def test_account_data_retrievable(an_account):
     nym_id = opentxs.OTAPI_Wrap_GetAccountWallet_NymID(an_account._id)
     assert nym_id == an_account.nym._id
     acct_type = opentxs.OTAPI_Wrap_GetAccountWallet_Type(an_account._id)
-    assert acct_type == "simple"
+    assert acct_type == "user"
 
 
 def test_account_id_retrievable(an_account):
